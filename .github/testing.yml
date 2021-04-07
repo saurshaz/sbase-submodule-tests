@@ -1,0 +1,67 @@
+name: CI Based Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    env:
+      PY_COLORS: "1"
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        python-version: [3.6.9]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Checkout submodules
+      uses: saurshaz/sbase-submodule@main
+      with:
+        remote: true
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        export PYTHONPATH=./tests/:./sub-app/tests/
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Install SeleniumBase
+      run: |
+        python setup.py install
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        # Stop the build if there are flake8 issues
+        flake8 . --count --show-source --statistics --exclude=temp
+    - name: Install Chrome and Firefox
+      run: |
+        sudo apt install google-chrome-stable
+        sudo apt-get install firefox
+    - name: Check the console scripts interface
+      run: |
+        seleniumbase
+        sbase
+    - name: Install chromedriver and geckodriver (Firefox Webdriver)
+      run: |
+        seleniumbase install chromedriver
+        seleniumbase install geckodriver
+    - name: Make sure pytest is working
+      run: |
+        echo "def test_1(): pass" > nothing.py
+        pytest nothing.py
+    - name: Make sure nosetests is working
+      run: |
+        echo "def test_2(): pass" > nothing2.py
+        nosetests nothing2.py
+    - name: Run pytest boilerplate_test.py --browser=chrome --headless
+      run: |
+        pytest test_sample.py --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
+  
