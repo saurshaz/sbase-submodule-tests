@@ -57,7 +57,7 @@ jobs:
       run: |
         echo "def test_2(): pass" > nothing2.py
         nosetests nothing2.py
-    - name: Run pytest boilerplate_test.py --browser=chrome --headless
+    - name: Run super app pytest boilerplate_test.py --browser=chrome --headless
       run: |
-        pytest --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
+        pytest super-app/tests --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
   
