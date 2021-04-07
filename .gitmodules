@@ -1,0 +1,3 @@
+[submodule "sbase-submodule"]
+	path = sbase-submodule
+	url = git@github.com:saurshaz/sbase-submodule
