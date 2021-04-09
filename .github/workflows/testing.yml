@@ -16,22 +16,35 @@ jobs:
       max-parallel: 6
       matrix:
         python-version: [3.6.13]
-
+        include:
+        - os: ubuntu-18.04
+          path: ~/.cache/pip
     steps:
+    - uses: actions/cache@v2
+      with:
+        path: ${{ matrix.path }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+         ${{ runner.os }}-pip-
     - name: Checkout repository
       uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: git submodule sync
-
+      with:
+        token: {{ secrets.CI_TOKEN }}
+        submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Checkout submodules
+      run: |
+        git submodule sync
+        echo "$(ls -l /home/runner/work/sbase-submodule-tests/sbase-submodule/)"
+    - name: Prepare dependencies
+      run: |
+        python -m pip install --upgrade pip==20.3
     - name: Install dependencies
       run: |
-        export PYTHONPATH=./tests/:./sub-app/tests/
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install --use-deprecated=legacy-resolver -r requirements.txt
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -41,23 +54,16 @@ jobs:
       run: |
         sudo apt install google-chrome-stable
         sudo apt-get install firefox
-    - name: Check the console scripts interface
-      run: |
-        seleniumbase
-        sbase
     - name: Install chromedriver and geckodriver (Firefox Webdriver)
       run: |
         seleniumbase install chromedriver
         seleniumbase install geckodriver
-    - name: Make sure pytest is working
+    - name: setup Python path for tests
       run: |
-        echo "def test_1(): pass" > nothing.py
-        pytest nothing.py
-    - name: Make sure nosetests is working
+        echo "PYTHONPATH=/home/runner/work/sbase-submodule-tests/sbase-submodule/:/home/runner/work/sbase-submodule-tests/tests/" >> $GITHUB_ENV
+    - name: Run app e2e tests
       run: |
-        echo "def test_2(): pass" > nothing2.py
-        nosetests nothing2.py
-    - name: Run super app pytest boilerplate_test.py --browser=chrome --headless
-      run: |
-        pytest super-app/tests --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
+        echo "${{ env.PYTHONPATH }}"
+        echo "*********************"
+        py.test -vvv --tour_on_id ./sbase-submodule/tests --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
   
