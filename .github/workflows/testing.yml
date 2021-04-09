@@ -65,5 +65,5 @@ jobs:
       run: |
         echo "${{ env.PYTHONPATH }}"
         echo "*********************"
-        py.test -vvv --tour_on_id ./sbase-submodule/tests --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
+        pytest ./sbase-submodule/tests --browser=chrome --headless -v -s --junit-xml=junit/test-results.xml
   
